@@ -43,11 +43,11 @@ void main() {
     expect(sentBody, contains('name="image"'));
   });
 
-  test('400 -> shows the server error message', () async {
+  test('400 -> Arabic invalid-image message', () async {
     final client = server(400, '{"error":"File is not a valid image."}');
     expect(
       () => ApiService.predict(image, client: client),
-      throwsA(isA<ApiException>().having((e) => e.message, 'message', 'File is not a valid image.')),
+      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('الصورة غير صالحة'))),
     );
   });
 
@@ -55,7 +55,7 @@ void main() {
     final client = server(500, '{"error":"boom"}');
     expect(
       () => ApiService.predict(image, client: client),
-      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('Server error (500)'))),
+      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('(500)'))),
     );
   });
 
@@ -63,7 +63,7 @@ void main() {
     final client = server(200, '<html>oops</html>');
     expect(
       () => ApiService.predict(image, client: client),
-      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('invalid response'))),
+      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('غير صالح'))),
     );
   });
 
@@ -71,7 +71,7 @@ void main() {
     final client = server(200, '{"label":"tomato__healthy"}');
     expect(
       () => ApiService.predict(image, client: client),
-      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('unexpected'))),
+      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('غير متوقعة'))),
     );
   });
 
@@ -80,7 +80,7 @@ void main() {
         'SocketException: Connection refused', Uri.parse('http://10.0.2.2:8000/predict')));
     expect(
       () => ApiService.predict(image, client: client),
-      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('Cannot reach'))),
+      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('تعذّر الاتصال'))),
     );
   });
 
@@ -88,7 +88,7 @@ void main() {
     final client = MockClient((_) async => throw const SocketException('refused'));
     expect(
       () => ApiService.predict(image, client: client),
-      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('Cannot reach'))),
+      throwsA(isA<ApiException>().having((e) => e.message, 'message', contains('تعذّر الاتصال'))),
     );
   });
 }

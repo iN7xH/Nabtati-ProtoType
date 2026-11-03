@@ -6,6 +6,7 @@ import 'dart:async'; // TimeoutException
 import 'dart:convert'; // jsonDecode
 import 'dart:io'; // File, SocketException
 
+import 'package:flutter/foundation.dart'; // debugPrint
 import 'package:http/http.dart' as http;
 
 import 'config.dart';
@@ -50,9 +51,17 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+// Messages shown to the user (Arabic UI).
 const String _unreachableMessage =
-    'Cannot reach the server at $apiBaseUrl.\n'
-    'Check that the API is running and that the phone and PC are on the same Wi-Fi.';
+    'تعذّر الاتصال بالخادم.\n'
+    'تأكد أن الخادم يعمل وأن الهاتف والحاسوب على نفس شبكة الواي فاي.\n'
+    '($apiBaseUrl)';
+const String _timeoutMessage = 'استغرق الخادم وقتاً طويلاً للرد، حاول مرة أخرى.';
+const String _fileMessage = 'تعذّرت قراءة الصورة المختارة، اخترها مرة أخرى.';
+const String _invalidResponseMessage = 'وصل رد غير صالح من الخادم.';
+const String _unexpectedFormatMessage = 'وصل رد بصيغة غير متوقعة من الخادم.';
+const String _rejectedImageMessage = 'الصورة غير صالحة، اختر صورة بصيغة JPG أو PNG.';
+String _serverErrorMessage(int code) => 'حدث خطأ في الخادم ($code)، حاول لاحقاً.';
 
 class ApiService {
   /// Sends the image to POST /predict and returns the parsed result.
@@ -72,14 +81,14 @@ class ApiService {
       final streamed = await httpClient.send(request).timeout(requestTimeout);
       response = await http.Response.fromStream(streamed).timeout(requestTimeout);
     } on TimeoutException {
-      throw ApiException('The server took too long to answer. Please try again.');
+      throw ApiException(_timeoutMessage);
     } on SocketException {
       throw ApiException(_unreachableMessage);
     } on http.ClientException {
       // The http package wraps "connection refused" etc. in a ClientException.
       throw ApiException(_unreachableMessage);
     } on FileSystemException {
-      throw ApiException('Could not read the selected image. Please pick it again.');
+      throw ApiException(_fileMessage);
     } finally {
       if (client == null) httpClient.close(); // free the connection we opened
     }
@@ -93,21 +102,20 @@ class ApiService {
     }
 
     if (response.statusCode == 200) {
-      if (body == null) throw ApiException('The server sent an invalid response.');
+      if (body == null) throw ApiException(_invalidResponseMessage);
       try {
         return Prediction.fromJson(body);
       } catch (_) {
-        throw ApiException('The server sent an unexpected response format.');
+        throw ApiException(_unexpectedFormatMessage);
       }
     }
 
-    // 400 / 500 -> the API sends {"error": "..."}
-    final serverMessage = body?['error'];
+    // 400 / 500 -> the API sends {"error": "..."} in English.
+    // Show an Arabic message to the user; print the English detail for debugging.
+    debugPrint('API error ${response.statusCode}: ${body?['error'] ?? response.body}');
     if (response.statusCode == 400) {
-      throw ApiException(
-        serverMessage is String ? serverMessage : 'The image was rejected by the server.',
-      );
+      throw ApiException(_rejectedImageMessage);
     }
-    throw ApiException('Server error (${response.statusCode}). Please try again later.');
+    throw ApiException(_serverErrorMessage(response.statusCode));
   }
 }

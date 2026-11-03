@@ -1,4 +1,4 @@
-// main.dart - app entry point.
+// main.dart - app entry point (Nabtati / نبتتي).
 //
 // Flutter basics:
 // - Everything on screen is a "widget" (like a UI component in React).
@@ -6,37 +6,51 @@
 // - build() returns the widget tree that describes the screen.
 // - In a StatefulWidget, call setState(() { ... }) after changing data
 //   so Flutter re-runs build() and redraws the screen (like setState in React).
+//
+// Arabic UI: the app's locale is Arabic, so Flutter lays everything out right-to-left
+// automatically (the first child of a Row is on the RIGHT).
 
 import 'dart:io'; // File class, to show the picked image from the phone's storage
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
+import 'labels_ar.dart';
+
+/// App name shown in the app bar.
+const String appTitle = 'نبتتي';
 
 /// Below this confidence we tell the user we're not sure (CLAUDE.md: 0.70).
 const double lowConfidenceThreshold = 0.70;
 
 void main() {
-  runApp(const PlantDoctorApp()); // start the app with our root widget
+  runApp(const NabtatiApp()); // start the app with our root widget
 }
 
-class PlantDoctorApp extends StatelessWidget {
-  const PlantDoctorApp({super.key});
+class NabtatiApp extends StatelessWidget {
+  const NabtatiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Plant Doctor',
+      title: appTitle,
       debugShowCheckedModeBanner: false, // hide the red "DEBUG" ribbon
       theme: ThemeData(colorSchemeSeed: Colors.green, useMaterial3: true),
+
+      // Arabic everywhere: right-to-left layout + Arabic text for built-in widgets.
+      locale: const Locale('ar'),
+      supportedLocales: const [Locale('ar')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+
       home: const HomeScreen(),
     );
   }
 }
 
 /// The only screen of the prototype.
-/// It is Stateful because the picked image changes while the app runs.
+/// It is Stateful because the picked image and the result change while the app runs.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -60,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(
       source: source,
-      maxWidth: 1024, // shrink big photos -> faster upload later (model uses 224x224 anyway)
+      maxWidth: 1024, // shrink big photos -> faster upload (the model uses ~224x224 anyway)
       imageQuality: 85, // JPEG quality 0-100
     );
 
@@ -89,10 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _result = prediction);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.message); // already a friendly message
+      setState(() => _error = e.message); // already a friendly Arabic message
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Something went wrong. Please try again.');
+      setState(() => _error = 'حدث خطأ غير متوقع، حاول مرة أخرى.');
       debugPrint('Unexpected error: $e'); // shows in the `flutter run` terminal
     } finally {
       if (mounted) setState(() => _loading = false); // always stop the spinner
@@ -103,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Scaffold = basic page layout: app bar on top, body below.
-      appBar: AppBar(title: const Text('Plant Doctor')),
+      appBar: AppBar(title: const Text(appTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -118,17 +132,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () => _pickImage(ImageSource.gallery),
+                      onPressed: _loading ? null : () => _pickImage(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library),
-                      label: const Text('Gallery'),
+                      label: const Text('المعرض'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _pickImage(ImageSource.camera),
+                      onPressed: _loading ? null : () => _pickImage(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt),
-                      label: const Text('Camera'),
+                      label: const Text('الكاميرا'),
                     ),
                   ),
                 ],
@@ -138,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               FilledButton.icon(
                 onPressed: (_image == null || _loading) ? null : _diagnose,
                 icon: const Icon(Icons.search),
-                label: const Text('Diagnose'),
+                label: const Text('تشخيص'),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -149,6 +163,32 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Shows the picked image, or a placeholder box if nothing is picked yet.
+  Widget _buildImagePreview() {
+    if (_image == null) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.green.shade200, width: 2),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.eco, size: 72, color: Colors.green),
+            SizedBox(height: 12),
+            Text('اختر صورة لورقة نبات واحدة', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+      );
+    }
+
+    // ClipRRect = round the corners of its child (the image).
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.file(_image!, fit: BoxFit.contain), // `!` = "I know it's not null here"
     );
   }
 
@@ -189,12 +229,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start, // start = right side in Arabic
           children: [
-            Text('Crop: ${_pretty(r.crop)}', style: const TextStyle(fontSize: 18)),
+            Text('المحصول: ${cropAr(r.crop)}', style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 4),
             Text(
-              r.isHealthy ? 'Healthy' : 'Disease: ${_pretty(r.disease)}',
+              r.isHealthy ? 'النبتة سليمة' : 'المرض: ${diseaseAr(r.disease)}',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -202,51 +242,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text('Confidence: $percent%', style: const TextStyle(fontSize: 16)),
+            Text('نسبة الثقة: $percent%', style: const TextStyle(fontSize: 16)),
             if (unsure) ...[
               // `if` inside a list = only add these widgets when unsure is true.
               const SizedBox(height: 8),
               const Text(
-                'Not sure, try a clearer photo of one leaf',
+                'النتيجة غير مؤكدة، جرّب صورة أوضح لورقة واحدة',
                 style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
               ),
             ],
           ],
         ),
       ),
-    );
-  }
-
-  /// "late_blight" -> "Late blight"
-  String _pretty(String s) {
-    final text = s.replaceAll('_', ' ').trim();
-    if (text.isEmpty) return s;
-    return text[0].toUpperCase() + text.substring(1);
-  }
-
-  /// Shows the picked image, or a placeholder box if nothing is picked yet.
-  Widget _buildImagePreview() {
-    if (_image == null) {
-      return Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.green.shade200, width: 2),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.eco, size: 72, color: Colors.green),
-            SizedBox(height: 12),
-            Text('Pick a photo of one leaf', style: TextStyle(fontSize: 18)),
-          ],
-        ),
-      );
-    }
-
-    // ClipRRect = round the corners of its child (the image).
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Image.file(_image!, fit: BoxFit.contain), // `!` = "I know it's not null here"
     );
   }
 }
