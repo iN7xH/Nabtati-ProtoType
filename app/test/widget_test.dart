@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(const NabtatiApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('نبتتي'), findsOneWidget); // app bar title
+    expect(find.text('Nabtati'), findsOneWidget); // app bar title
     expect(find.text('المعرض'), findsOneWidget); // Gallery button
     expect(find.text('تشخيص'), findsOneWidget); // Diagnose button
 

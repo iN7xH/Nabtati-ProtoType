@@ -19,8 +19,8 @@ import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
 import 'labels_ar.dart';
 
-/// App name shown in the app bar.
-const String appTitle = 'نبتتي';
+/// App name shown in the app bar (kept in English on purpose; the rest of the UI is Arabic).
+const String appTitle = 'Nabtati';
 
 /// Below this confidence we tell the user we're not sure (CLAUDE.md: 0.70).
 const double lowConfidenceThreshold = 0.70;
