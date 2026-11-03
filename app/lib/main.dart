@@ -69,11 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Prediction? _result; // last result from the API (null = none yet)
   String? _error; // error message to show (null = no error)
 
-  /// Opens the gallery or camera and stores the chosen image.
+  /// Opens the phone's gallery and stores the chosen image.
   /// `async` / `await` work like in JavaScript: wait for the user without freezing the UI.
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImage() async {
     final XFile? picked = await _picker.pickImage(
-      source: source,
+      source: ImageSource.gallery,
       maxWidth: 1024, // shrink big photos -> faster upload (the model uses ~224x224 anyway)
       imageQuality: 85, // JPEG quality 0-100
     );
@@ -128,24 +128,14 @@ class _HomeScreenState extends State<HomeScreen> {
               // Expanded = take all the remaining vertical space.
               Expanded(child: _buildImagePreview()),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _loading ? null : () => _pickImage(ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('المعرض'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _loading ? null : () => _pickImage(ImageSource.camera),
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('الكاميرا'),
-                    ),
-                  ),
-                ],
+              // Gallery only (camera removed on purpose).
+              OutlinedButton.icon(
+                onPressed: _loading ? null : _pickImage,
+                icon: const Icon(Icons.photo_library),
+                label: const Text('اختيار صورة من المعرض'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
               ),
               const SizedBox(height: 12),
               // Diagnose button: disabled (onPressed: null) until an image is picked or while loading.

@@ -9,7 +9,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nabtati'), findsOneWidget); // app bar title
-    expect(find.text('المعرض'), findsOneWidget); // Gallery button
+    expect(find.text('اختيار صورة من المعرض'), findsOneWidget); // Gallery button
+    expect(find.byIcon(Icons.camera_alt), findsNothing); // camera removed
     expect(find.text('تشخيص'), findsOneWidget); // Diagnose button
 
     // Layout direction comes from the Arabic locale.
