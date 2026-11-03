@@ -1,0 +1,7 @@
+# MOCK mode (default). Works on any recent Python.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9   # needed by FastAPI to read multipart/form-data uploads
+pillow>=10.4              # open/validate images, resize for the model
+
+# For REAL mode use requirements-real.txt instead (adds TensorFlow).

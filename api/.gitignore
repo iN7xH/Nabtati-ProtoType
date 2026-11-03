@@ -1,0 +1,6 @@
+.venv/
+.venv-real/
+__pycache__/
+# the trained model is shared separately (too big for git)
+*.keras
+*.h5

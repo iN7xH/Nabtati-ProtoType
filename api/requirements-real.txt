@@ -1,0 +1,6 @@
+# REAL mode = everything from requirements.txt + TensorFlow.
+# TensorFlow only supports some Python versions (NOT 3.14): use Python 3.10-3.12.
+# Ideally install the SAME TensorFlow version that was used for training, e.g. tensorflow==2.19.0
+-r requirements.txt
+tensorflow>=2.16
+numpy

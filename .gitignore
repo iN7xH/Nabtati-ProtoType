@@ -1,0 +1,13 @@
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Python (also in api/.gitignore)
+__pycache__/
+*.pyc
+
+# Trained model files are shared separately (too big for git)
+*.keras
+*.h5
